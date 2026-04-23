@@ -1,0 +1,41 @@
+{
+ "_note": "Illustrative traces demonstrating the four qualitative behavior categories discussed in the DeepSeek R1 paper and TinyZero. These are representative examples of the patterns, not direct quotes from a specific model run. Actual traces would be collected from saved completions during training for the final paper.",
+ "items": [
+ {
+ "size": "0.5B base",
+ "stage": "early training",
+ "title": "Random guessing",
+ "trace": "Using the numbers [4, 8, 15, 16] to reach 23. 4 + 15 = 19. Answer: 4 + 15\n\nvalue = 19 (expected 23) · reward = 0"
+ },
+ {
+ "size": "0.5B base",
+ "stage": "late training",
+ "title": "Structured attempt, no verification",
+ "trace": "Using [4, 8, 15, 16] to make 23. 16 + 8 - 4 + 15 = 35. That might work.\nAnswer: 16 + 8 - 4 + 15\n\nvalue = 35 · reward = 0"
+ },
+ {
+ "size": "1.5B base",
+ "stage": "mid training",
+ "title": "Partial self-check",
+ "trace": "[4, 8, 15, 16] → 23. Let me try 16 + 8 = 24, close. 24 - 4 = 20. Not right.\nWhat about 15 + 8 = 23? Yes.\nAnswer: 15 + 8\n\nvalue = 23 · reward = 1"
+ },
+ {
+ "size": "3B base",
+ "stage": "after aha moment",
+ "title": "Explicit backtracking + verification",
+ "trace": "Given [4, 8, 15, 16], target 23. Try 16 + 4 = 20, plus 8 = 28, too high. Subtract instead: 16 + 8 = 24, minus 4 = 20, still not 23. Try 15 + 8 = 23. That uses two numbers and equals the target.\nAnswer: 15 + 8\n\nvalue = 23 · reward = 1"
+ },
+ {
+ "size": "3B base",
+ "stage": "after aha moment",
+ "title": "Multi-step search",
+ "trace": "Numbers [3, 12, 7, 25], target 42. 25 + 12 = 37, need 5 more. 7 - 3 = 4, not 5. Try different pairing. 25 + 7 = 32, plus 12 = 44, minus 3 = 41. Close. What if 3 * 12 = 36, plus 7 = 43, minus 25 = 18. No. Go back: (25 + 12) + (7 - 3) = 37 + 4 = 41. Off by one. Try (25 - 3) + 12 + 7 = 22 + 19 = 41. Hmm. Let me try 3 * (12 + 7 - 25/...). Actually 12 + 25 + 7 - 3 + ... wait, I only have four numbers. Recheck: 25 + 12 + 7 - 3 = 41. One off. 3 * (7 + 25 - 12) = 3 * 20 = 60. No. Accept 41 is close; answer may need division. Not immediately clear, will settle: Answer: 25 + 12 + 7 - 3\n\n(illustrative: model verbalizes backtracking, then settles on best candidate. value = 41 · reward = 0)"
+ },
+ {
+ "size": "3B base",
+ "stage": "checkpoint 400",
+ "title": "Verification after answer",
+ "trace": "[5, 10, 6, 2] → 22. Try 10 * 2 + 5 + 6 = 20 + 11 = 31. Too high. 10 + 6 = 16, plus 5 + 2 = 23. One off. 10 + 6 + 2 + 5 = 23 - still one off. Try (10 - 2) * (6 - 5) + ... wait. (5 + 6) * 2 = 22. Check: 5 + 6 = 11, times 2 = 22. Uses 5, 6, 2, all in the set. 10 unused is fine.\nAnswer: (5 + 6) * 2\n\nvalue = 22 · reward = 1"
+ }
+ ]
+}

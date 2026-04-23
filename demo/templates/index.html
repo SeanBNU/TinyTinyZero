@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TinyTinyZero: live GRPO demo</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header>
+ <div class="brand">
+ <div class="logo">◉◉</div>
+ <div>
+ <h1>TinyTinyZero</h1>
+ <p class="sub">A live GRPO-mechanics demo on Qwen2.5-0.5B, running in-browser on this laptop.</p>
+ </div>
+ </div>
+ <div class="status" id="status">
+ <span class="dot" id="status-dot"></span>
+ <span id="status-text">idle</span>
+ <button id="load-btn">Load Qwen2.5-0.5B</button>
+ </div>
+</header>
+
+<main>
+
+ <!-- SECTION 0: Free chat with the local model -->
+ <section class="panel chat-panel">
+ <div class="chat-head">
+ <div class="local-badge" title="No network calls during generation. Model is on disk.">
+ <span class="pulse"></span> running locally · <span id="local-model-id">Qwen2.5-0.5B</span> · <span id="local-device">MPS</span>
+ </div>
+ </div>
+
+ <div class="chat-input-row">
+ <textarea id="chat-input" placeholder="Ask the local model anything..." rows="1"></textarea>
+ <button id="chat-send" class="primary">▶</button>
+ </div>
+
+ <div class="chat-presets">
+ <button class="preset" data-msg="Write a haiku about gradient descent.">haiku</button>
+ <button class="preset" data-msg="Explain reinforcement learning to a curious 10-year-old in under 80 words.">RL for a 10yo</button>
+ <button class="preset" data-msg="What is the coolest thing about prime numbers?">prime numbers</button>
+ </div>
+
+ <pre id="chat-text" class="stream chat-stream" hidden></pre>
+ <div class="chat-stats" hidden>
+ <span id="chat-rate" class="pill-small">-- tok/s</span>
+ <span id="chat-elapsed" class="pill-small">0.0s</span>
+ </div>
+ </section>
+
+ <!-- SECTION 1: Countdown problem + single stream -->
+ <section class="panel">
+ <h2>1. Countdown <span class="pill">reward = <span class="mono">eval(expr) == target</span></span></h2>
+
+ <div class="problem-row">
+ <div class="problem-box" id="problem-box">
+ <div class="p-field"><span class="k">numbers</span><span class="v mono" id="p-numbers">[3, 12, 7, 25]</span></div>
+ <div class="p-field"><span class="k">target</span><span class="v mono" id="p-target">42</span></div>
+ </div>
+ <div class="controls">
+ <button id="new-problem">New problem</button>
+ <button id="stream-btn" class="primary">▶ Run single generation</button>
+ <label>temp <input type="range" id="temp" min="0.1" max="1.5" step="0.1" value="0.8"><span id="temp-val">0.8</span></label>
+ </div>
+ </div>
+
+ <div class="stream-out">
+ <div class="pane">
+ <div class="pane-title">model output (live tokens)</div>
+ <pre id="stream-text" class="stream"></pre>
+ </div>
+ <div class="pane">
+ <div class="pane-title">reward</div>
+ <div id="reward-card" class="reward-card">
+ <div class="big-reward" id="big-reward">&ndash;</div>
+ <div class="reward-detail" id="reward-detail">run a generation to compute reward</div>
+ </div>
+ </div>
+ </div>
+ </section>
+
+ <!-- SECTION 2: GRPO step visualization -->
+ <section class="panel">
+ <h2>2. One GRPO step <span class="pill">G completions + z-score advantages</span></h2>
+
+ <div class="controls">
+ <label>G <input type="number" id="g-size" min="2" max="8" value="2" style="width:60px"></label>
+ <button id="grpo-btn" class="primary">▶ Sample group + compute advantages</button>
+ <span id="grpo-timing" class="muted mono"></span>
+ </div>
+
+ <div id="grpo-group" class="grpo-group"></div>
+
+ <div class="math-row">
+ <div class="math-card">
+ <div class="math-title">group statistics</div>
+ <div class="math-body" id="grpo-stats">&ndash;</div>
+ </div>
+ <div class="math-card">
+ <div class="math-title">advantage (z-score)</div>
+ <div class="math-body mono">A<sub>i</sub> = (r<sub>i</sub> − μ) / σ</div>
+ <div class="math-body" id="grpo-adv">&ndash;</div>
+ </div>
+ <div class="math-card">
+ <div class="math-title">clipped surrogate (PPO-style)</div>
+ <div class="math-body mono">L = 𝔼 [ min( ρ<sub>i</sub> A<sub>i</sub>, clip(ρ<sub>i</sub>, 1±ε) A<sub>i</sub> ) ] − β · KL(π ‖ π<sub>ref</sub>)</div>
+ <div class="math-body" id="grpo-loss">at ρ=1 (first step), L = −mean(A) = 0</div>
+ </div>
+ </div>
+ </section>
+
+ <!-- SECTION 3: TinyZero curve -->
+ <section class="panel">
+ <h2>3. TinyZero's 3B reward curve <span class="pill">what "working" looks like</span></h2>
+ <canvas id="curve" width="900" height="260"></canvas>
+ <div class="caption">Reward ~0 to ~0.45 over ~350 GRPO steps on Qwen2.5-3B. Aha moment near the inflection.</div>
+ </section>
+
+ <!-- SECTION 4: Aha moment gallery -->
+ <section class="panel">
+ <h2>4. Aha moment <span class="pill">illustrative traces</span></h2>
+ <div id="aha-gallery" class="aha-gallery"></div>
+ </section>
+
+ <!-- SECTION 5: honest status -->
+ <section class="panel footer-panel">
+ <h2>5. Where this sits on Apr 16</h2>
+ <ul>
+ <li><strong>Running on this laptop:</strong> Qwen2.5-0.5B-Instruct inference, the real countdown reward
+ function, and group sampling that feeds the GRPO z-score math.</li>
+ <li><strong>Not done yet:</strong> the actual GRPO gradient steps on 0.5B / 1.5B / 3B base models. TinyZero's
+ 3B run needs ≥40GB of GPU and roughly a day of wall time, which isn't a laptop workload.</li>
+ <li><strong>Before Apr 22:</strong> rent an H100, run TinyZero's reference config on each of the three sizes,
+ and write the AAAI-format paper with trace-level behavior analysis.</li>
+ </ul>
+ </section>
+</main>
+
+<footer>
+ Sean Blundin · CS 4180 (Prof. Amato), Northeastern · Spring 2026 · <a href="https://github.com/SeanBNU/TinyTinyZero" style="color: inherit;">github.com/SeanBNU/TinyTinyZero</a>
+</footer>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

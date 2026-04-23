@@ -1,0 +1,18 @@
+{
+ "_note": "Illustrative curve traced from the publicly visible TinyZero Qwen2.5-3B countdown run on W&B (wandb.ai/jiayipan/TinyZero). Values are approximate, for the real published numbers see the W&B project. Shape: slow start, inflection around step 150-200, gradual climb toward ~0.45.",
+ "model": "Qwen2.5-3B-Base",
+ "task": "countdown",
+ "algorithm": "GRPO",
+ "points": [
+ [0, 0.02], [10, 0.03], [20, 0.04], [30, 0.04], [40, 0.05], [50, 0.06],
+ [60, 0.07], [70, 0.08], [80, 0.09], [90, 0.10], [100, 0.11], [110, 0.13],
+ [120, 0.14], [130, 0.16], [140, 0.18], [150, 0.21], [160, 0.23], [170, 0.26],
+ [180, 0.28], [190, 0.30], [200, 0.32], [210, 0.33], [220, 0.34], [230, 0.36],
+ [240, 0.37], [250, 0.38], [260, 0.39], [270, 0.40], [280, 0.41], [290, 0.42],
+ [300, 0.42], [310, 0.43], [320, 0.43], [330, 0.44], [340, 0.44], [350, 0.45],
+ [360, 0.45], [370, 0.45], [380, 0.46], [390, 0.46], [400, 0.46]
+ ],
+ "annotations": [
+ { "step": 170, "reward": 0.26, "label": "aha moment: first self-verification traces" }
+ ]
+}
