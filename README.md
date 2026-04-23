@@ -7,10 +7,9 @@ Replication and extension of TinyZero (Pan et al., 2025), which reproduces DeepS
 ## Contents
 
 - `PROJECT-PROPOSAL.md` — proposal submitted Feb 28.
-- `report/paper.html` — the final paper (AAAI-structured). Open in a browser and print to PDF.
-- `report/status_summary.md` — 1-page status handout from the Apr 16 poster session.
-- `poster/` — the poster panels (8 letter-size pages), open in a browser and print.
-- `demo/` — a Flask app that runs Qwen2.5-0.5B locally and walks through one GRPO step.
+- `demo/` — Flask app that runs Qwen2.5-0.5B locally and walks through one GRPO step.
+- `analysis/` — scripts that produced the preliminary-findings data in the paper (Section 5.2) and the four-bin behavior rubric (Section 4.3).
+- `results/` — JSONL output + chart + text summary from running the analysis scripts. See `results/README.md`.
 
 ## Running the demo
 

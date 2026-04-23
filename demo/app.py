@@ -131,17 +131,34 @@ def extract_answer(text: str) -> str | None:
     return None
 
 
+def _lenient_eval(answer: str) -> float | None:
+    """Best-effort numerical evaluation: strip trailing '= <num>', allow only
+    arithmetic characters. Returns a float on success, None otherwise. Used for
+    diagnostic display in the demo only; does NOT affect reward."""
+    if answer is None:
+        return None
+    s = answer.replace("×", "*").replace("÷", "/").replace("−", "-")
+    s = re.sub(r"\s*=\s*[-+]?\d+(?:\.\d+)?\s*$", "", s).strip()
+    if not _ALLOWED_EXPR.match(s):
+        return None
+    try:
+        return float(eval(s, {"__builtins__": {}}, {}))
+    except Exception:
+        return None
+
+
 def countdown_reward(text: str, numbers: list[int], target: int) -> dict:
     """The RLVR reward function. Binary: 1 if the expression evaluates to target
-    using only provided numbers (each at most once), else 0. Returns detail too."""
+    using only provided numbers (each at most once), else 0. Returns detail too.
+    Also returns a 'lenient_value' field for diagnostic display only, computed
+    via a looser parse. lenient_value does NOT affect reward."""
     answer = extract_answer(text)
     if answer is None:
-        return {"reward": 0.0, "reason": "no_answer_line", "answer": None, "value": None}
+        return {"reward": 0.0, "reason": "no_answer_line", "answer": None, "value": None, "lenient_value": None}
+    lenient = _lenient_eval(answer)
     safe = answer.replace("×", "*").replace("÷", "/").replace("−", "-")
-    # Models love to append "= <number>" to their answer line. Strip it before eval.
-    safe = re.sub(r"\s*=\s*[-+]?\d+(?:\.\d+)?\s*$", "", safe).strip()
     if not _ALLOWED_EXPR.match(safe):
-        return {"reward": 0.0, "reason": "illegal_chars", "answer": answer, "value": None}
+        return {"reward": 0.0, "reason": "illegal_chars", "answer": answer, "value": None, "lenient_value": lenient}
     nums_used = [int(n) for n in re.findall(r"\d+", safe)]
     multiset_ok = True
     available = list(numbers)
@@ -152,14 +169,14 @@ def countdown_reward(text: str, numbers: list[int], target: int) -> dict:
             multiset_ok = False
             break
     if not multiset_ok:
-        return {"reward": 0.0, "reason": "numbers_not_in_set", "answer": answer, "value": None}
+        return {"reward": 0.0, "reason": "numbers_not_in_set", "answer": answer, "value": None, "lenient_value": lenient}
     try:
         value = eval(safe, {"__builtins__": {}}, {})
     except Exception as exc:
-        return {"reward": 0.0, "reason": f"eval_error:{type(exc).__name__}", "answer": answer, "value": None}
+        return {"reward": 0.0, "reason": f"eval_error:{type(exc).__name__}", "answer": answer, "value": None, "lenient_value": lenient}
     if abs(value - target) < 1e-6:
-        return {"reward": 1.0, "reason": "correct", "answer": answer, "value": float(value)}
-    return {"reward": 0.0, "reason": "wrong_value", "answer": answer, "value": float(value)}
+        return {"reward": 1.0, "reason": "correct", "answer": answer, "value": float(value), "lenient_value": lenient}
+    return {"reward": 0.0, "reason": "wrong_value", "answer": answer, "value": float(value), "lenient_value": lenient}
 
 
 # -------------------------------------------------------------------------------------
@@ -398,6 +415,7 @@ def grpo_step():
                 "reward_reason": rw["reason"],
                 "answer": rw["answer"],
                 "value": rw["value"],
+                "lenient_value": rw.get("lenient_value"),
                 "seed": base_seed + i,
             }
         )

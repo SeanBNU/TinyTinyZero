@@ -1,0 +1,10 @@
+Qwen2.5-0.5B-Instruct on countdown, N = 30 trials
+============================================================
+  successes:          0/30  (0.0%)
+  zero-reward trials: 30/30
+
+Failure-mode breakdown among zero-reward trials:
+  illegal_chars           15   50.0%  #########################
+  wrong_value             13   43.3%  #####################
+  no_answer_line           1    3.3%  #
+  numbers_not_in_set       1    3.3%  #

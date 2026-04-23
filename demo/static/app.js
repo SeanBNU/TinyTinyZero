@@ -122,9 +122,15 @@
  const br = $("big-reward");
  br.textContent = rw.reward === 1.0 ? "1.0" : "0.0";
  br.className = "big-reward " + (rw.reward === 1.0 ? "good" : "bad");
- const detail = rw.reward === 1.0
- ? `✔ correct · answer = ${rw.answer} = ${rw.value}`
- : `✗ ${rw.reason}${rw.answer ? " · answer = " + rw.answer : ""}${rw.value != null ? " = " + rw.value : ""}`;
+ let detail;
+ if (rw.reward === 1.0) {
+ detail = `✔ correct · answer = ${rw.answer} = ${rw.value}`;
+ } else {
+ detail = `✗ ${rw.reason}${rw.answer ? " · answer = " + rw.answer : ""}${rw.value != null ? " = " + rw.value : ""}`;
+ if (rw.value == null && rw.lenient_value != null) {
+ detail += ` · lenient eval: ${rw.lenient_value}`;
+ }
+ }
  $("reward-detail").textContent = detail;
  es.close();
  btn.disabled = false;
@@ -169,11 +175,12 @@
  card.className = "grpo-card " + (c.reward === 1.0 ? "good" : "bad");
  const adv = (c.advantage ?? 0).toFixed(3);
  const tag = c.reward === 1.0 ? '<span class="r1">r=1</span>' : '<span class="r0">r=0</span>';
+ const lenient = (c.value == null && c.lenient_value != null) ? ` · lenient: ${c.lenient_value}` : "";
  card.innerHTML = `
  <div class="head"><span>completion #${c.idx}</span><span>seed ${c.seed}</span></div>
  <div class="body">${escapeHtml(c.text).slice(0, 600)}</div>
  <div class="foot">
- <span>${tag} · ${escapeHtml(c.reward_reason)}${c.answer ? " · " + escapeHtml(c.answer) : ""}</span>
+ <span>${tag} · ${escapeHtml(c.reward_reason)}${c.answer ? " · " + escapeHtml(c.answer) : ""}${lenient}</span>
  <span class="adv">A = ${adv}</span>
  </div>`;
  group.appendChild(card);
